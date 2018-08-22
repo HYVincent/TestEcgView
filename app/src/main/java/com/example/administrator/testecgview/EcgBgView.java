@@ -2,8 +2,11 @@ package com.example.administrator.testecgview;
 
 import android.content.Context;
 import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.LinearGradient;
 import android.graphics.Paint;
 import android.graphics.Rect;
+import android.graphics.Shader;
 import android.support.annotation.Nullable;
 import android.support.v4.content.ContextCompat;
 import android.util.AttributeSet;
@@ -146,6 +149,34 @@ public class EcgBgView extends View {
         }
         //绘制纵向的竖线
         canvas.drawLine(mEcgStartX,mViewHeight-mItemTextHeight-DpUtil.dp2px(mContext,5), mEcgStartX,DpUtil.dp2px(mContext,5),mYLineTagPaint);
+        //绘制纵向的渐变色线
+        Rect lineRect = new Rect();
+        lineRect.set((int)(mLeftTextWidth),0,
+                (int)(mLeftTextWidth+ DpUtil.dp2px(mContext,2)),
+                (int) mViewHeight);
+        // 渐变的颜色
+       /* LinearGradient lg = new LinearGradient((int)(mLeftTextWidth), 0, (int)(mLeftTextWidth+ DpUtil.dp2px(mContext,2)), (int) (mViewHeight), Color.parseColor("#00ffffff"),
+                Color.parseColor("#ffffff"), Shader.TileMode.CLAMP);// CLAMP重复最后一个颜色至最后*/
+        int colors[] = new int[3];
+        float positions[] = new float[3];
+        // 第1个点
+        colors[0] = 0xFF239097;
+        positions[0] = 1;
+        // 第2个点
+        colors[1] = 0xFF239097;
+        positions[1] = 0.5f;
+        // 第3个点
+        colors[2] = 0xFF239097;
+        positions[2] = 0;
+
+        LinearGradient shader = new LinearGradient(
+                0, 0,
+                0, mViewHeight,
+                colors,
+                positions,
+                Shader.TileMode.CLAMP);
+        mYLineTagPaint.setShader(shader);
+        canvas.drawRect(lineRect, mYLineTagPaint);
     }
 
     /**
