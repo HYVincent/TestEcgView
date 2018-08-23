@@ -137,6 +137,7 @@ public class EcgBgView extends View {
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
+        //绘制背景
         canvas.drawColor(ContextCompat.getColor(mContext,R.color.color_blue_2a284f));
         drawLeftText(canvas);
         drawBgLine(canvas);
@@ -150,10 +151,12 @@ public class EcgBgView extends View {
     private void drawEcgData(Canvas canvas) {
         //计算屏幕上能够展示的最大的点的个数
         mMaxDataNum = (mViewWidth - mLeftTextWidth - tagAndEcgLeftMargin) / mItemDataMargin;
+        //相当于 mEcgPath = new Path();
         mEcgPath.reset();
         if(dataBeans.size()>0){
             //移动到第一个点的位置
             mEcgPath.moveTo(mEcgStartX,getY(dataBeans.get(0)));
+            //开始瞄点
             mEcgPath.lineTo(mEcgStartX,getY(dataBeans.get(0)));
             for (int i = 0;i<dataBeans.size();i++){
                 mEcgPath.lineTo(mEcgStartX + mItemDataMargin * i,getY(dataBeans.get(i)));
@@ -162,9 +165,11 @@ public class EcgBgView extends View {
                     Rect timeRect = new Rect();
                     String timeStr = String.valueOf(dataBeans.get(i).getTime()) +"s";
                     mYLineTagPaint.getTextBounds(timeStr,0,timeStr.length(),timeRect);
-                    canvas.drawText(timeStr,mEcgStartX + mItemDataMargin * i - timeRect.width()/2,mViewHeight-timeRect.height()/2,mYLineTagPaint);
+                    //绘制事件文本
+                    canvas.drawText(timeStr,mEcgStartX + mItemDataMargin * i - timeRect.width()/2,mViewHeight - timeRect.height()/2,mYLineTagPaint);
                 }
             }
+            //绘制心电数据路径
             canvas.drawPath(mEcgPath,mYLineTagPaint);
         }
     }
@@ -229,7 +234,9 @@ public class EcgBgView extends View {
                 positions,
                 Shader.TileMode.MIRROR);
         mYLineTagPaint.setShader(shader);
+        mYLineTagPaint.setStyle(Paint.Style.FILL_AND_STROKE);
         canvas.drawRect(lineRect, mYLineTagPaint);
+        mYLineTagPaint.setStyle(Paint.Style.STROKE);
     }
 
     /**
