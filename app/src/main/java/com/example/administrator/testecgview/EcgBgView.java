@@ -271,7 +271,15 @@ public class EcgBgView extends View {
     private float getY(EcgDataBean ecgDataBean){
         double percentage = ecgDataBean.getData() * 1.0 / (mMaxValue+mItemValue);
         float y = (mViewHeight - DpUtil.dp2px(mContext,5)) * (1 - (float)percentage);
-        return y > (mViewHeight-DpUtil.dp2px(mContext,5))?(mViewHeight-DpUtil.dp2px(mContext,5)):y;
+        //y越界判断
+        if(y < DpUtil.dp2px(mContext,5)){
+            y = DpUtil.dp2px(mContext,5);
+        }
+        if(y > mViewHeight - DpUtil.dp2px(mContext,5)){
+            y = mViewHeight - DpUtil.dp2px(mContext,5);
+        }
+//        return y > (mViewHeight-DpUtil.dp2px(mContext,5))?(mViewHeight-DpUtil.dp2px(mContext,5)):y;
+        return  y;
     }
 
     @Override
