@@ -212,31 +212,36 @@ public class EcgBgView extends View {
         lineRect.set((int)(mLeftTextWidth),0,
                 (int)(mLeftTextWidth+ DpUtil.dp2px(mContext,2)),
                 (int) mViewHeight);
-        // 渐变的颜色
-       LinearGradient lg = new LinearGradient((int)(mLeftTextWidth), 0, (int)(mLeftTextWidth+ DpUtil.dp2px(mContext,2)), (int) (mViewHeight), Color.parseColor("#00ffffff"),
-                Color.parseColor("#ffffff"), Shader.TileMode.CLAMP);// CLAMP重复最后一个颜色至最后
-        int colors[] = new int[3];
-        float positions[] = new float[3];
+        int colors[] = new int[4];
+        float positions[] = new float[4];
         // 第1个点
-        colors[0] = 0xFF239097;
+        colors[0] = ContextCompat.getColor(mContext,R.color.color_transparency_00000000);
         positions[0] = 1;
         // 第2个点
-        colors[1] = 0xFF239097;
-        positions[1] = 0.5f;
+        colors[1] = ContextCompat.getColor(mContext,R.color.color_blue_112339);
+        positions[1] = 0.75f;
         // 第3个点
-        colors[2] = 0xFF239097;
-        positions[2] = 0;
+        colors[2] =  ContextCompat.getColor(mContext,R.color.color_blue_315565);
+        positions[2] = 0.5f;
 
+        colors[3] =  ContextCompat.getColor(mContext,R.color.color_blue_3c8093);
+        positions[3] = 0;
+        // 渐变的颜色
         LinearGradient shader = new LinearGradient(
-                0, 0,
-                0, mViewHeight,
+                (int)(mLeftTextWidth),
+                0,
+                (int)(mLeftTextWidth+ DpUtil.dp2px(mContext,1)),
+                (int) (mViewHeight),
                 colors,
-                positions,
-                Shader.TileMode.MIRROR);
+                null,
+                Shader.TileMode.CLAMP);
         mYLineTagPaint.setShader(shader);
+        //填充，不然线条是空心的
         mYLineTagPaint.setStyle(Paint.Style.FILL_AND_STROKE);
         canvas.drawRect(lineRect, mYLineTagPaint);
+        //重新设置为描边，不然数据图形会被填充
         mYLineTagPaint.setStyle(Paint.Style.STROKE);
+        mYLineTagPaint.setShader(null);
     }
 
     /**
