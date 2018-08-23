@@ -1,5 +1,7 @@
 package com.example.administrator.testecgview;
 
+import android.os.Handler;
+import android.os.Message;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 
@@ -9,6 +11,23 @@ public class MainActivity extends AppCompatActivity {
 
     private EcgBgView ecgBgView;
     private long time;
+
+    private Handler handler = new Handler(){
+        @Override
+        public void handleMessage(Message msg) {
+            super.handleMessage(msg);
+            if(msg.arg1 == 0x11){
+                int index = (int)msg.obj;
+                EcgDataBean dataBean = new EcgDataBean();
+                if(index % 20 == 0){
+                    time = System.currentTimeMillis();
+                }
+                dataBean.setData(Integer.valueOf(new Random().nextInt(200)));
+                dataBean.setTime(0);
+                ecgBgView.addData(dataBean);
+            }
+        }
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -20,13 +39,10 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void doAction(int index) {
                 if(index % 5 == 0){
-                    EcgDataBean dataBean = new EcgDataBean();
-                    if(index % 20 == 0){
-                        time = System.currentTimeMillis();
-                    }
-                    dataBean.setData(Integer.valueOf(new Random().nextInt(200)));
-                    dataBean.setTime(0);
-                    ecgBgView.addData(dataBean);
+                   Message message = Message.obtain();
+                   message.obj = index;
+                   message.arg1 = 0x11;
+                   handler.sendMessage(message);
                 }
             }
         });
