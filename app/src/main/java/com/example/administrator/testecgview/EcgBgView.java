@@ -5,11 +5,13 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.LinearGradient;
 import android.graphics.Paint;
+import android.graphics.Path;
 import android.graphics.Rect;
 import android.graphics.Shader;
 import android.support.annotation.Nullable;
 import android.support.v4.content.ContextCompat;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.View;
 
 import java.util.ArrayList;
@@ -38,6 +40,26 @@ public class EcgBgView extends View {
         }
         invalidate();
     }
+
+    /**
+     * 添加数据点
+     * @param ecgDataBean
+     */
+    public void addData(EcgDataBean ecgDataBean){
+        if(dataBeans != null){
+            if(dataBeans.size()>mMaxDataNum){
+                //移除最后一个
+//                this.dataBeans.remove(dataBeans.size()-1);
+                this.dataBeans.remove(0);
+            }
+            //添加始终是第一个位置
+//            this.dataBeans.add(0,ecgDataBean);
+            this.dataBeans.add(ecgDataBean);
+            Log.d("受到数据", "addData: "+ecgDataBean.getData());
+        }
+        invalidate();
+    }
+
     private Context mContext;
     //View的宽度
     private float mViewWidth;
@@ -65,7 +87,7 @@ public class EcgBgView extends View {
     //最小值
     private float mMinValue = 0;
     //最大值
-    private float mMaxValue = 150;
+    private float mMaxValue = 200;
     //两个tag之间的值间隔
     private float mItemValue = 10;
     private Paint mYLineTagPaint;
@@ -75,7 +97,11 @@ public class EcgBgView extends View {
     private float mEcgStartX;
     //当前的心率数据
     private float currentEcgData;
-
+    //两个数据点之间的间隔
+    private float mItemDataMargin = 2;
+    //表示屏幕上显示的最大的点的个数
+    private float mMaxDataNum = 0f;
+    private Path mEcgPath;
     private void init(Context mContext, AttributeSet attrs){
         this.mContext = mContext;
         mLeftTextWidth = DpUtil.dp2px(mContext,mLeftTextWidth);
@@ -85,6 +111,7 @@ public class EcgBgView extends View {
         mLeftEcgDataTextSize = DpUtil.dp2px(mContext,mLeftEcgDataTextSize);
         mLeftTagAndEcgMargin = DpUtil.dp2px(mContext,mLeftTagAndEcgMargin);
         tagAndEcgLeftMargin = DpUtil.dp2px(mContext,tagAndEcgLeftMargin);
+        mItemDataMargin = DpUtil.dp2px(mContext,mItemDataMargin);
 
         mEcgStartX = mLeftTextWidth + tagAndEcgLeftMargin;
         //绘制  心率 文字画笔
@@ -102,6 +129,9 @@ public class EcgBgView extends View {
         mYLineTagPaint.setAntiAlias(true);
         mYLineTagPaint.setColor(ContextCompat.getColor(mContext,R.color.color_blue_3c8093));
         mYLineTagPaint.setTextSize(DpUtil.dp2px(mContext,8));
+        mYLineTagPaint.setStyle(Paint.Style.STROKE);
+
+        mEcgPath = new Path();
     }
 
     @Override
@@ -118,7 +148,25 @@ public class EcgBgView extends View {
      * @param canvas
      */
     private void drawEcgData(Canvas canvas) {
-        //TODO 绘制心电数据 根据数据计算Y坐标
+        //计算屏幕上能够展示的最大的点的个数
+        mMaxDataNum = (mViewWidth - mLeftTextWidth - tagAndEcgLeftMargin) / mItemDataMargin;
+        mEcgPath.reset();
+        if(dataBeans.size()>0){
+            //移动到第一个点的位置
+            mEcgPath.moveTo(mEcgStartX,getY(dataBeans.get(0)));
+            mEcgPath.lineTo(mEcgStartX,getY(dataBeans.get(0)));
+            for (int i = 0;i<dataBeans.size();i++){
+                mEcgPath.lineTo(mEcgStartX + mItemDataMargin * i,getY(dataBeans.get(i)));
+                if(i % 20 == 0){
+                    //绘制下面的时间
+                    Rect timeRect = new Rect();
+                    String timeStr = String.valueOf(dataBeans.get(i).getTime()) +"s";
+                    mYLineTagPaint.getTextBounds(timeStr,0,timeStr.length(),timeRect);
+                    canvas.drawText(timeStr,mEcgStartX + mItemDataMargin * i - timeRect.width()/2,mViewHeight-timeRect.height()/2,mYLineTagPaint);
+                }
+            }
+            canvas.drawPath(mEcgPath,mYLineTagPaint);
+        }
     }
 
     //绘制背景线条
@@ -141,10 +189,15 @@ public class EcgBgView extends View {
                 //绘制长线条横线的
                 canvas.drawLine(mEcgStartX,mViewHeight-mItemTagRect.height() - DpUtil.dp2px(mContext,5)-i * mItemHeightY,
                         mViewWidth,mViewHeight-mItemTagRect.height() - DpUtil.dp2px(mContext,5)-i * mItemHeightY,mYLineTagPaint);
-            }else {
+            }else  {
                 //绘制短线条  横向的
                 canvas.drawLine(mEcgStartX,mViewHeight-mItemTagRect.height() - DpUtil.dp2px(mContext,5)-i * mItemHeightY,
                         mEcgStartX + DpUtil.dp2px(mContext,3),mViewHeight-mItemTagRect.height() - DpUtil.dp2px(mContext,5)-i * mItemHeightY,mYLineTagPaint);
+                if(i == 20){
+                    //把200也画出来
+                    canvas.drawText(textTag,mEcgStartX-DpUtil.dp2px(mContext,3)-mItemTagRect.width(),
+                            mViewHeight-mItemTagRect.height()/2 - DpUtil.dp2px(mContext,5)-i * mItemHeightY,mYLineTagPaint);
+                }
             }
         }
         //绘制纵向的竖线
@@ -155,8 +208,8 @@ public class EcgBgView extends View {
                 (int)(mLeftTextWidth+ DpUtil.dp2px(mContext,2)),
                 (int) mViewHeight);
         // 渐变的颜色
-       /* LinearGradient lg = new LinearGradient((int)(mLeftTextWidth), 0, (int)(mLeftTextWidth+ DpUtil.dp2px(mContext,2)), (int) (mViewHeight), Color.parseColor("#00ffffff"),
-                Color.parseColor("#ffffff"), Shader.TileMode.CLAMP);// CLAMP重复最后一个颜色至最后*/
+       LinearGradient lg = new LinearGradient((int)(mLeftTextWidth), 0, (int)(mLeftTextWidth+ DpUtil.dp2px(mContext,2)), (int) (mViewHeight), Color.parseColor("#00ffffff"),
+                Color.parseColor("#ffffff"), Shader.TileMode.CLAMP);// CLAMP重复最后一个颜色至最后
         int colors[] = new int[3];
         float positions[] = new float[3];
         // 第1个点
@@ -174,7 +227,7 @@ public class EcgBgView extends View {
                 0, mViewHeight,
                 colors,
                 positions,
-                Shader.TileMode.CLAMP);
+                Shader.TileMode.MIRROR);
         mYLineTagPaint.setShader(shader);
         canvas.drawRect(lineRect, mYLineTagPaint);
     }
@@ -186,6 +239,7 @@ public class EcgBgView extends View {
     private void drawLeftText(Canvas canvas) {
         if(dataBeans.size() >0){
             currentEcgData = dataBeans.get(dataBeans.size()-1).getData();
+            Log.d("绘制心电图", "drawLeftText: "+currentEcgData);
         }else {
             //这里是测试值，写为70
             currentEcgData = 70;
@@ -195,7 +249,9 @@ public class EcgBgView extends View {
         mLeftEcgTagPaint.getTextBounds(mLeftEcgDataTag,0,mLeftEcgDataTag.length(),leftEcgTagRect);
         //leftEcgRect 计算文字的宽高
         Rect leftEcgRect = new Rect();
-        mLeftEcgUnit = String.valueOf(currentEcgData) +mLeftEcgUnit;
+        //清空之前的文字
+        mLeftEcgUnit = "次/分";
+        mLeftEcgUnit = String.valueOf((int)currentEcgData) +mLeftEcgUnit;
         mLeftEcgPaint.getTextBounds(mLeftEcgUnit,0,mLeftEcgUnit.length(),leftEcgRect);
         mLeftTextButtomMargin = (mViewHeight - leftEcgTagRect.height() - leftEcgRect.height() - mLeftTagAndEcgMargin)/2;
         //绘制左边的tag文字
@@ -203,4 +259,19 @@ public class EcgBgView extends View {
         //绘制数据tag文字
         canvas.drawText(mLeftEcgUnit,mLeftTextWidth/2-leftEcgRect.width()/2,mLeftTextButtomMargin+leftEcgTagRect.height()+mLeftTagAndEcgMargin,mLeftEcgPaint);
     }
+
+    //根据数值获取Y轴的坐标值
+    private float getY(EcgDataBean ecgDataBean){
+        double percentage = ecgDataBean.getData() * 1.0 / (mMaxValue+mItemValue);
+        return (mViewHeight - DpUtil.dp2px(mContext,5)) * (1 - (float)percentage);
+    }
+
+    @Override
+    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+        //默认测量模式为EXACTLY，否则请使用上面的方法并指定默认的宽度和高度
+        mViewWidth = MeasureSpec.getSize(widthMeasureSpec);
+        mViewHeight = MeasureSpec.getSize(heightMeasureSpec);
+        setMeasuredDimension((int)mViewWidth, (int) mViewHeight);
+    }
+
 }
